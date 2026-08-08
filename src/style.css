@@ -1,0 +1,248 @@
+:root {
+  color-scheme: dark;
+  --panel: rgba(12, 20, 18, 0.78);
+  --panel-border: rgba(180, 220, 190, 0.28);
+  --accent: #7dffa3;
+  --accent-2: #ffd76a;
+  --danger: #ff7b7b;
+  --text: #f4fff7;
+  --muted: #b7cfc0;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #06110c;
+  color: var(--text);
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#ui-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.panel {
+  pointer-events: auto;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at top, rgba(40, 80, 55, 0.45), rgba(4, 10, 8, 0.82));
+  pointer-events: auto;
+}
+
+.menu-card {
+  width: min(920px, 100%);
+  padding: 28px 30px 24px;
+}
+
+.menu-card h1 {
+  margin: 0 0 8px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: 0.08em;
+}
+
+.menu-card .subtitle {
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+button,
+.btn {
+  pointer-events: auto;
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(125, 255, 163, 0.22), rgba(40, 90, 60, 0.55));
+  color: var(--text);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.12s ease, border-color 0.12s ease;
+}
+
+button:hover,
+.btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  border-color: rgba(125, 255, 163, 0.55);
+}
+
+button.secondary {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.level-card {
+  text-align: left;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  color: inherit;
+  width: 100%;
+}
+
+.level-card.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.level-card .name {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.level-card .meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.hud-chip {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: var(--shadow);
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-center {
+  position: absolute;
+  top: 28%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+  text-shadow: 0 8px 30px rgba(0, 0, 0, 0.65);
+  letter-spacing: 0.12em;
+}
+
+.hud-hint {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  max-width: min(420px, calc(100% - 36px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 0.92rem;
+}
+
+.hud-speed {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-card {
+  width: min(520px, 100%);
+  padding: 28px;
+  text-align: center;
+}
+
+.result-card h2 {
+  margin: 0 0 10px;
+  font-size: 2rem;
+}
+
+.result-card .stats {
+  margin: 16px 0 8px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.stars {
+  color: var(--accent-2);
+  font-size: 1.6rem;
+  letter-spacing: 0.2em;
+  margin: 8px 0 18px;
+}
+
+.pause-card {
+  width: min(420px, 100%);
+  padding: 24px;
+  text-align: center;
+}
+
+.help-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.hidden {
+  display: none !important;
+}
