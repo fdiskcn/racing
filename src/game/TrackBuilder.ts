@@ -75,8 +75,8 @@ export class TrackBuilder {
     const bodies: CANNON.Body[] = [];
     const moving: MovingObstacle[] = [];
     const halfWidth = level.halfWidth;
-    const railHeight = 0.85;
-    const thickness = 0.35;
+    const railHeight = 1.35;
+    const thickness = 0.4;
 
     const roadMat = new THREE.MeshStandardMaterial({
       color: level.theme === 'canyon' ? 0x9a6b45 : level.theme === 'storm' ? 0x6a6f68 : 0x8b7355,
@@ -345,6 +345,24 @@ export class TrackBuilder {
       m.body.position.x = x;
       m.body.velocity.set(0, 0, 0);
     }
+  }
+
+  pointAtProgress(track: TrackData, progress: number): { position: THREE.Vector3; tangent: THREE.Vector3 } {
+    const p = THREE.MathUtils.clamp(progress, 0, 0.98);
+    const dist = p * track.totalLength;
+    let i = 0;
+    while (i < track.cumulative.length - 2 && track.cumulative[i + 1] < dist) i++;
+    const segStart = track.cumulative[i];
+    const segEnd = track.cumulative[i + 1];
+    const segLen = Math.max(1e-6, segEnd - segStart);
+    const t = (dist - segStart) / segLen;
+    const a = track.path[i];
+    const b = track.path[i + 1];
+    const position = a.clone().lerp(b, t);
+    const tangent = new THREE.Vector3().subVectors(b, a);
+    if (tangent.lengthSq() < 1e-6) tangent.set(0, 0, -1);
+    else tangent.normalize();
+    return { position, tangent };
   }
 
   progressAlongTrack(track: TrackData, position: THREE.Vector3): number {

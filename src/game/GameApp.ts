@@ -38,6 +38,8 @@ export class GameApp {
   private countdown = 3;
   private windPhase = 0;
   private lastTs = 0;
+  private lastSafeProgress = 0.02;
+  private respawnCooldown = 0;
   private readonly tmpVel = new THREE.Vector3();
   private readonly tmpForward = new THREE.Vector3(0, 0, -1);
 
@@ -157,6 +159,8 @@ export class GameApp {
     this.raceTime = 0;
     this.countdown = 3;
     this.windPhase = 0;
+    this.lastSafeProgress = 0.02;
+    this.respawnCooldown = 0;
     this.cameraController.reset();
     this.phase = 'countdown';
     this.menu.hide();
@@ -235,6 +239,23 @@ export class GameApp {
     this.menu.showResult(payload);
   }
 
+  private respawnPlayer(): void {
+    if (!this.track || !this.player) return;
+    const spot = this.trackBuilder.pointAtProgress(
+      this.track,
+      Math.max(0.02, this.lastSafeProgress - 0.015),
+    );
+    this.player.body.position.set(spot.position.x, spot.position.y + 0.95, spot.position.z);
+    this.player.body.velocity.set(spot.tangent.x * 2, 0, spot.tangent.z * 2);
+    this.player.body.angularVelocity.set(0, 0, 0);
+    this.respawnCooldown = 1.2;
+    this.cameraController.reset();
+    this.hud.setCenter('重生');
+    window.setTimeout(() => {
+      if (this.phase === 'racing') this.hud.setCenter(null);
+    }, 700);
+  }
+
   private checkFinish(actor: MarbleActor): void {
     if (!this.track || actor.finished) return;
     const toFinish = new THREE.Vector3(
@@ -244,7 +265,7 @@ export class GameApp {
     );
     const along = toFinish.dot(this.track.finishNormal);
     const lateral = toFinish.clone().addScaledVector(this.track.finishNormal, -along);
-    if (along > -0.6 && along < 2.5 && lateral.length() < this.track.halfWidth + 1.2) {
+    if (along > -1.2 && along < 3.5 && lateral.length() < this.track.halfWidth + 1.8) {
       actor.finished = true;
       actor.finishTime = this.raceTime;
       actor.body.velocity.scale(0.2, actor.body.velocity);
@@ -332,12 +353,40 @@ export class GameApp {
 
     for (const actor of this.actors) this.checkFinish(actor);
 
-    // Fail conditions — require a clear fall below the track.
-    const fallLimit = Math.min(this.track.lowestY, this.track.path[0].y - 12);
-    if (this.player.body.position.y < fallLimit) {
-      this.finishRace(false, '掉出赛道');
+    this.respawnCooldown = Math.max(0, this.respawnCooldown - dt);
+    const playerProgress = this.trackBuilder.progressAlongTrack(
+      this.track,
+      this.player.mesh.position,
+    );
+    if (this.player.body.position.y > this.track.lowestY + 4) {
+      this.lastSafeProgress = Math.max(this.lastSafeProgress, Math.min(playerProgress, 0.96));
+    }
+
+    // Soft fail: respawn on track instead of instant game over.
+    const fallLimit = Math.min(this.track.lowestY, this.track.path[0].y - 10);
+    if (this.player.body.position.y < fallLimit && this.respawnCooldown <= 0) {
+      this.respawnPlayer();
     } else if (this.raceTime >= this.level.timeLimit) {
       this.finishRace(false, '超时');
+    }
+
+    // Keep AI from sinking forever.
+    for (const ai of this.ais) {
+      if (ai.actor.finished) continue;
+      if (ai.actor.body.position.y < fallLimit) {
+        const prog = Math.max(
+          0.02,
+          this.trackBuilder.progressAlongTrack(this.track, ai.actor.mesh.position) - 0.02,
+        );
+        const spot = this.trackBuilder.pointAtProgress(this.track, prog);
+        ai.actor.body.position.set(
+          spot.position.x,
+          spot.position.y + 0.9,
+          spot.position.z,
+        );
+        ai.actor.body.velocity.set(0, 0, 0);
+        ai.actor.body.angularVelocity.set(0, 0, 0);
+      }
     }
 
     const rank = this.computeLiveRank();

@@ -135,7 +135,7 @@ export class Menu {
               <li><b>空格</b> 跳跃（第 3 关起）</li>
               <li><b>Esc</b> 暂停</li>
             </ul>
-            <p class="subtitle" style="margin-top:16px">掉出赛道或超时将失败。抵达金色终点拱门即可完赛。</p>
+            <p class="subtitle" style="margin-top:16px">掉落会在赛道附近重生；超时将失败。抵达金色终点拱门即可完赛。</p>
             <div class="btn-row">
               <button class="secondary" data-action="main">返回</button>
             </div>
