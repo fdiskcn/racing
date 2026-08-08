@@ -111,6 +111,7 @@ export class TrackBuilder {
       roadMesh.rotation.order = 'YXZ';
       roadMesh.rotation.y = yaw;
       roadMesh.rotation.x = pitch;
+      roadMesh.updateMatrixWorld(true);
       roadMesh.castShadow = true;
       roadMesh.receiveShadow = true;
       group.add(roadMesh);
@@ -121,21 +122,27 @@ export class TrackBuilder {
         shape: new CANNON.Box(new CANNON.Vec3(roadW / 2, thickness / 2, (len + 0.15) / 2)),
       });
       roadBody.position.set(mid.x, mid.y, mid.z);
-      roadBody.quaternion.setFromEuler(pitch, yaw, 0, 'YXZ');
+      roadBody.quaternion.set(
+        roadMesh.quaternion.x,
+        roadMesh.quaternion.y,
+        roadMesh.quaternion.z,
+        roadMesh.quaternion.w,
+      );
       physics.addBody(roadBody);
       bodies.push(roadBody);
 
       // Side rails
       for (const side of [-1, 1]) {
-        const offset = new THREE.Vector3(side * (halfWidth + 0.2), railHeight / 2, 0);
+        const offset = new THREE.Vector3(side * (halfWidth + 0.25), railHeight / 2 - thickness / 2, 0);
         offset.applyEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ'));
         const railPos = mid.clone().add(offset);
-        const railGeo = new THREE.BoxGeometry(0.35, railHeight, len + 0.15);
+        const railGeo = new THREE.BoxGeometry(0.4, railHeight, len + 0.2);
         const railMesh = new THREE.Mesh(railGeo, railMat);
         railMesh.position.copy(railPos);
         railMesh.rotation.order = 'YXZ';
         railMesh.rotation.y = yaw;
         railMesh.rotation.x = pitch;
+        railMesh.updateMatrixWorld(true);
         railMesh.castShadow = true;
         railMesh.receiveShadow = true;
         group.add(railMesh);
@@ -143,10 +150,15 @@ export class TrackBuilder {
         const railBody = new CANNON.Body({
           mass: 0,
           material: physics.groundMaterial,
-          shape: new CANNON.Box(new CANNON.Vec3(0.175, railHeight / 2, (len + 0.15) / 2)),
+          shape: new CANNON.Box(new CANNON.Vec3(0.2, railHeight / 2, (len + 0.2) / 2)),
         });
         railBody.position.set(railPos.x, railPos.y, railPos.z);
-        railBody.quaternion.setFromEuler(pitch, yaw, 0, 'YXZ');
+        railBody.quaternion.set(
+          railMesh.quaternion.x,
+          railMesh.quaternion.y,
+          railMesh.quaternion.z,
+          railMesh.quaternion.w,
+        );
         physics.addBody(railBody);
         bodies.push(railBody);
       }
@@ -154,19 +166,51 @@ export class TrackBuilder {
       lowestY = Math.min(lowestY, a.y, b.y);
     }
 
-    // Start podium markings
+    // Start positions sit ON the first stretch of road (not behind it).
     const start = path[0].clone();
     const startDir = new THREE.Vector3().subVectors(path[1], path[0]).normalize();
-    const startRight = new THREE.Vector3().crossVectors(startDir, new THREE.Vector3(0, 1, 0)).normalize();
+    const startRight = new THREE.Vector3().crossVectors(startDir, new THREE.Vector3(0, 1, 0));
+    if (startRight.lengthSq() < 1e-6) startRight.set(1, 0, 0);
+    else startRight.normalize();
+
+    // Extra start pad under spawn for stability.
+    const padCenter = start.clone().addScaledVector(startDir, 1.5);
+    padCenter.y -= 0.02;
+    const padMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(halfWidth * 2.2, thickness, 6),
+      roadMat,
+    );
+    padMesh.position.copy(padCenter);
+    padMesh.rotation.order = 'YXZ';
+    padMesh.rotation.set(0, Math.atan2(startDir.x, startDir.z), 0);
+    padMesh.updateMatrixWorld(true);
+    padMesh.receiveShadow = true;
+    group.add(padMesh);
+    const padBody = new CANNON.Body({
+      mass: 0,
+      material: physics.groundMaterial,
+      shape: new CANNON.Box(new CANNON.Vec3(halfWidth * 1.1, thickness / 2, 3)),
+    });
+    padBody.position.set(padCenter.x, padCenter.y, padCenter.z);
+    padBody.quaternion.set(
+      padMesh.quaternion.x,
+      padMesh.quaternion.y,
+      padMesh.quaternion.z,
+      padMesh.quaternion.w,
+    );
+    physics.addBody(padBody);
+    bodies.push(padBody);
+
     const startPositions: THREE.Vector3[] = [];
     const laneCount = 1 + level.aiCount;
+    const spawnY = thickness / 2 + 0.45 + 0.08;
     for (let i = 0; i < laneCount; i++) {
       const lane = i - (laneCount - 1) / 2;
       const pos = start
         .clone()
-        .addScaledVector(startRight, lane * Math.min(1.3, halfWidth * 0.45))
-        .addScaledVector(startDir, -1.2);
-      pos.y += 0.7;
+        .addScaledVector(startRight, lane * Math.min(1.2, halfWidth * 0.4))
+        .addScaledVector(startDir, 1.2 + i * 0.05);
+      pos.y += spawnY;
       startPositions.push(pos);
     }
 

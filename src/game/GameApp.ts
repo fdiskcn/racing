@@ -332,8 +332,9 @@ export class GameApp {
 
     for (const actor of this.actors) this.checkFinish(actor);
 
-    // Fail conditions
-    if (this.player.body.position.y < this.track.lowestY) {
+    // Fail conditions — require a clear fall below the track.
+    const fallLimit = Math.min(this.track.lowestY, this.track.path[0].y - 12);
+    if (this.player.body.position.y < fallLimit) {
       this.finishRace(false, '掉出赛道');
     } else if (this.raceTime >= this.level.timeLimit) {
       this.finishRace(false, '超时');

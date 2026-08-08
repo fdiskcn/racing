@@ -144,7 +144,7 @@ export class MarbleController {
     if (wish.lengthSq() > 1e-6) wish.normalize();
 
     const grounded = this.isGrounded();
-    const accel = grounded ? 42 : 12;
+    const accel = grounded ? 36 : 10;
     this.actor.body.applyForce(
       new CANNON.Vec3(wish.x * accel, 0, wish.z * accel),
       this.actor.body.position,

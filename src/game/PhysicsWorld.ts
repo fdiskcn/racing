@@ -17,8 +17,8 @@ export class PhysicsWorld {
     this.marbleMaterial = new CANNON.Material('marble');
 
     const contact = new CANNON.ContactMaterial(this.groundMaterial, this.marbleMaterial, {
-      friction: 0.55,
-      restitution: 0.18,
+      friction: 0.7,
+      restitution: 0.08,
       contactEquationStiffness: 1e8,
       contactEquationRelaxation: 3,
     });
